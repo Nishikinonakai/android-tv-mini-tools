@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Desktop returning to front (BACK / HOME). Reverses home_exit, but the two
+     halves are deliberately staggered: alpha fades in early (desktop is visible
+     as the app leaves), while the scale settle (1.06 -> 1.0) starts late and runs
+     long so its tail OUTLASTS the app's exit — you watch the desktop land on its
+     own after the app is already gone. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:shareInterpolator="false">
+    <alpha
+        android:fromAlpha="0.0" android:toAlpha="1.0"
+        android:duration="200"
+        android:interpolator="@interpolator/emphasized_decel" />
+    <scale
+        android:fromXScale="1.06" android:toXScale="1.0"
+        android:fromYScale="1.06" android:toYScale="1.0"
+        android:pivotX="50%p" android:pivotY="50%p"
+        android:startOffset="150"
+        android:duration="380"
+        android:interpolator="@interpolator/emphasized_decel" />
+</set>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Privileged-permission allowlist for the Mini Home launcher.
+
+  The launcher lives in /system/priv-app/MiniHome but is signed with its own
+  (non-platform) key, so on a build with ro.control_privapp_permissions=enforce
+  these signature|privileged permissions are NOT granted unless the package is
+  listed here. Deploy this file to /system/etc/permissions/ (same partition as
+  the priv-app) and reboot once; verify with:
+      adb shell "dumpsys package com.zy.tvhome | grep -E 'FORCE_STOP|CHANGE_COMPONENT|REAL_GET_TASKS'"
+
+    FORCE_STOP_PACKAGES          → real force-stop (one-tap clean)
+    CHANGE_COMPONENT_ENABLED_STATE → toggle other apps' boot receivers (autostart)
+    REAL_GET_TASKS               → enumerate running processes + their memory
+-->
+<permissions>
+    <privapp-permissions package="com.zy.tvhome">
+        <permission name="android.permission.FORCE_STOP_PACKAGES"/>
+        <permission name="android.permission.CHANGE_COMPONENT_ENABLED_STATE"/>
+        <permission name="android.permission.REAL_GET_TASKS"/>
+    </privapp-permissions>
+</permissions>

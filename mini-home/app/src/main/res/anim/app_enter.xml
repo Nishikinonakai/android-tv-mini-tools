@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App entering (open). Zooms up from 92% + fades in on the emphasized
+     decelerate curve — quick to appear, soft to settle. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:shareInterpolator="false">
+    <scale
+        android:fromXScale="0.92" android:toXScale="1.0"
+        android:fromYScale="0.92" android:toYScale="1.0"
+        android:pivotX="50%p" android:pivotY="50%p"
+        android:duration="300"
+        android:interpolator="@interpolator/emphasized_decel" />
+    <alpha
+        android:fromAlpha="0.0" android:toAlpha="1.0"
+        android:duration="220"
+        android:interpolator="@interpolator/emphasized_decel" />
+</set>

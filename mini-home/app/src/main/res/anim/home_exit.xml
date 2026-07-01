@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Desktop while an app opens. Micro zoom-IN (1.0 -> 1.06) + fade, so the
+     launcher reads as pushing back into the opening app. Symmetric with
+     home_enter, which reverses it on return. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:shareInterpolator="false">
+    <scale
+        android:fromXScale="1.0" android:toXScale="1.06"
+        android:fromYScale="1.0" android:toYScale="1.06"
+        android:pivotX="50%p" android:pivotY="50%p"
+        android:duration="280"
+        android:interpolator="@interpolator/emphasized_accel" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:duration="240"
+        android:interpolator="@interpolator/emphasized_accel" />
+</set>

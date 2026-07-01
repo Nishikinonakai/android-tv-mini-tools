@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material "emphasized accelerate": slow lean-in, then snaps away.
+     Used for exiting surfaces (app leaving, desktop receding on open). -->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:controlX1="0.3" android:controlY1="0.0"
+    android:controlX2="0.8" android:controlY2="0.15" />

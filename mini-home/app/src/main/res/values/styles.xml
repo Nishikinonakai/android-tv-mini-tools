@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base launcher theme: the stock fullscreen black, plus a window-animation
+         style so HOME / task-switch transitions animate instead of hard-cutting.
+         Tile launches still ride makeScaleUpAnimation (grows from the icon); this
+         covers the paths ActivityOptions can't reach — chiefly returning to the
+         launcher via HOME. -->
+    <style name="HomeTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+        <item name="android:windowAnimationStyle">@style/HomeWindowAnim</item>
+    </style>
+
+    <style name="HomeWindowAnim" parent="@android:style/Animation.Activity">
+        <!-- activity open/close (BACK path; scaleUp overrides open for tiles) -->
+        <item name="android:activityOpenEnterAnimation">@anim/app_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/home_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/home_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/app_exit</item>
+        <!-- task open/close -->
+        <item name="android:taskOpenEnterAnimation">@anim/app_enter</item>
+        <item name="android:taskOpenExitAnimation">@anim/home_exit</item>
+        <item name="android:taskCloseEnterAnimation">@anim/home_enter</item>
+        <item name="android:taskCloseExitAnimation">@anim/app_exit</item>
+        <!-- task brought to front (HOME landing on launcher) -->
+        <item name="android:taskToFrontEnterAnimation">@anim/home_enter</item>
+        <item name="android:taskToFrontExitAnimation">@anim/app_exit</item>
+        <item name="android:taskToBackEnterAnimation">@anim/home_enter</item>
+        <item name="android:taskToBackExitAnimation">@anim/app_exit</item>
+        <!-- HOME from a fullscreen app often routes through the wallpaper set -->
+        <item name="android:wallpaperOpenEnterAnimation">@anim/home_enter</item>
+        <item name="android:wallpaperOpenExitAnimation">@anim/app_exit</item>
+        <item name="android:wallpaperCloseEnterAnimation">@anim/home_enter</item>
+        <item name="android:wallpaperCloseExitAnimation">@anim/app_exit</item>
+    </style>
+</resources>

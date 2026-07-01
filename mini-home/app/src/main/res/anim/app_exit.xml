@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App leaving (close / HOME). Mirror of app_enter: shrinks to 92% + fades
+     out on the emphasized accelerate curve — leans in, then snaps away. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:shareInterpolator="false">
+    <scale
+        android:fromXScale="1.0" android:toXScale="0.92"
+        android:fromYScale="1.0" android:toYScale="0.92"
+        android:pivotX="50%p" android:pivotY="50%p"
+        android:duration="260"
+        android:interpolator="@interpolator/emphasized_accel" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:duration="240"
+        android:interpolator="@interpolator/emphasized_accel" />
+</set>
