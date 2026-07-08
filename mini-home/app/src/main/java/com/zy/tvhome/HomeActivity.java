@@ -64,14 +64,20 @@ public class HomeActivity extends Activity {
 
     private static final int COLS = 5;
 
-    // ── Demo build-up stages ─────────────────────────────────────
-    // All true = the finished launcher (normal behaviour). The live demo starts
-    // from a deliberately plain base (all false) and switches the macOS niceties
-    // on one rebuild at a time, so the desktop is earned step by step on camera.
+    // ── Feature toggles (also the demo build-up stages) ──────────
+    // Each macOS nicety is independently switchable — flipping them true one rebuild at
+    // a time is how the desktop gets built up on camera. The shipped default now leaves
+    // the two per-frame-expensive ones OFF: WALLPAPER + FROST drive the wallpaper-blur
+    // "vibrancy" (a blurred wallpaper crop re-rasterized behind every tile each frame),
+    // and on this weak SoC that cost more than it was worth. Structure is instead carried
+    // by solid card fills + drop shadows, and with the frost layer gone everything renders
+    // at native full resolution again (the frost backdrop was the only half-res surface).
+    // The static niceties (MAC_ICONS / ICON_PLATE / GRID_DEDUP) have no per-frame cost and
+    // stay on.
     private static final boolean MAC_ICONS = true;   // macOS icon pack on grid
     private static final boolean GRID_DEDUP = true;  // drop AOSP shells (文件/Search)
-    private static final boolean WALLPAPER = true;   // Tahoe desktop wallpaper
-    private static final boolean FROST = true;       // frosted-glass tiles
+    private static final boolean WALLPAPER = false;  // Tahoe wallpaper (off → flat palette bg)
+    private static final boolean FROST = false;      // frosted-glass tiles (off → solid card + shadow)
     private static final boolean ICON_PLATE = true;  // uniform rounded-rect backplate behind每个 logo
 
     private FrameLayout rootFrame;
@@ -309,10 +315,20 @@ public class HomeActivity extends Activity {
         bar.setClipChildren(false);
         bar.setClipToPadding(false);
         bar.setPadding(dp(40), 0, dp(40), 0);
-        // Hardware layer: the header's frost is static, so cache it as a texture once
-        // and just composite that quad on every scroll frame instead of re-running the
-        // shader fill each time.
-        bar.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        if (FROST) {
+            // Header frost is static → cache it as a texture once and composite that quad
+            // on every scroll frame instead of re-running the shader fill each time.
+            bar.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        } else {
+            // Solid opaque bar: give it a bounds outline + elevation so it casts a soft
+            // shadow onto the rows scrolling beneath it — structure by shadow, no frost.
+            bar.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override public void getOutline(View v, android.graphics.Outline o) {
+                    o.setRect(0, 0, v.getWidth(), v.getHeight());
+                }
+            });
+            bar.setElevation(dpf(6));
+        }
 
         clockBlock = new LinearLayout(this);
         clockBlock.setOrientation(LinearLayout.VERTICAL);
@@ -370,7 +386,9 @@ public class HomeActivity extends Activity {
         sld.addState(new int[]{android.R.attr.state_focused},
                 roundRect(palette.cardFocus, dp(22), palette.cardBorder, dp(2)));
         sld.addState(new int[]{},
-                roundRect(palette.cardBg, dp(22), 0, 0));
+                // palette.bg (not cardBg) so the pill still reads as a recessed chip
+                // against the now-solid cardBg header instead of same-colour-on-same.
+                roundRect(palette.bg, dp(22), 0, 0));
         b.setBackground(sld);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -507,9 +525,16 @@ public class HomeActivity extends Activity {
         tile.setBackground(tileBorderBg());
         tile.setOrientation(LinearLayout.VERTICAL);
         tile.setGravity(Gravity.CENTER);
-        // Hardware layer so the 1.08x focus-scale composites the cached card texture
-        // instead of re-rasterizing the border each frame.
-        tile.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        if (FROST) {
+            // Frost mode: HW layer so the 1.08x focus-scale composites the cached
+            // transparent card texture instead of re-rasterizing the border each frame.
+            tile.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        } else {
+            // Solid mode: a resting elevation gives every card a soft drop shadow
+            // (structure without frost); animateScale lifts it further on focus. No HW
+            // layer — an elevation shadow reads more reliably when it isn't set.
+            tile.setElevation(dpf(2));
+        }
         int hPad = dp(10);
         int vPad = dp(18);
         tile.setPadding(hPad, vPad, hPad, vPad);
@@ -591,27 +616,48 @@ public class HomeActivity extends Activity {
 
     private void animateScale(View v, boolean focused) {
         float to = focused ? FOCUS_SCALE : 1.0f;
-        // The card animates its own scale. The overlay is refreshed ONCE on focus
-        // change (see the focus listener) and draws the focused tile's frost at the
-        // final FOCUS_SCALE immediately — so we don't repaint the overlay on every
-        // animation frame (that was a big chunk of the navigation cost). The frost
-        // reaches full size a touch ahead of the icon over 120ms; imperceptible.
-        v.animate().scaleX(to).scaleY(to).setDuration(120).start();
+        // The card animates its own scale. In solid mode it also lifts its translationZ
+        // so the drop shadow deepens on focus — the "raised" cue the frost scrim used to
+        // give (0 in the dormant frost path, where the overlay carries the focus scrim).
+        // In frost mode the overlay is refreshed ONCE on focus change (see the focus
+        // listener) so we don't repaint it every animation frame.
+        v.animate().scaleX(to).scaleY(to)
+                .translationZ(FROST ? 0f : (focused ? dpf(6) : 0f))
+                .setDuration(120).start();
     }
 
     private static final float FOCUS_SCALE = 1.08f;
 
-    /** Tile background: transparent normally, a rounded focus ring when focused. The
-     *  frosted fill is painted behind the tile by the FrostOverlay. */
+    /** Tile background.
+     *  Frost mode: transparent normally, a rounded focus ring when focused — the fill is
+     *  painted behind the tile by the FrostOverlay.
+     *  Solid mode (default): an opaque rounded card (cardBg), a brighter card + border on
+     *  focus. The opaque round-rect also defines the outline the elevation shadow follows,
+     *  so structure comes from fill + shadow rather than a blurred backdrop. */
     private Drawable tileBorderBg() {
+        if (FROST) {
+            GradientDrawable focus = new GradientDrawable();
+            focus.setShape(GradientDrawable.RECTANGLE);
+            focus.setColor(0x00000000);
+            focus.setCornerRadius(dpf(14));
+            focus.setStroke(dp(2), palette.cardBorder);
+            StateListDrawable sld = new StateListDrawable();
+            sld.addState(new int[]{android.R.attr.state_focused}, focus);
+            sld.addState(new int[]{}, new GradientDrawable());
+            return sld;
+        }
+        GradientDrawable normal = new GradientDrawable();
+        normal.setShape(GradientDrawable.RECTANGLE);
+        normal.setColor(palette.cardBg);
+        normal.setCornerRadius(dpf(14));
         GradientDrawable focus = new GradientDrawable();
         focus.setShape(GradientDrawable.RECTANGLE);
-        focus.setColor(0x00000000);
+        focus.setColor(palette.cardFocus);
         focus.setCornerRadius(dpf(14));
         focus.setStroke(dp(2), palette.cardBorder);
         StateListDrawable sld = new StateListDrawable();
         sld.addState(new int[]{android.R.attr.state_focused}, focus);
-        sld.addState(new int[]{}, new GradientDrawable());
+        sld.addState(new int[]{}, normal);
         return sld;
     }
 
